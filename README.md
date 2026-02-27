@@ -1,4 +1,56 @@
-# React + TypeScript + Vite
+# Factures Résonance
+
+Application de facturation React + Vite, avec sauvegarde locale et synchronisation cloud optionnelle.
+
+## Développement local
+
+```bash
+npm install
+npm run dev
+```
+
+## Build production
+
+```bash
+npm run build
+```
+
+## Sauvegarde en ligne (Cloudflare Pages + KV)
+
+Le projet inclut une API Pages Functions: [functions/api/invoices.js](functions/api/invoices.js).
+
+### 1) Créer un namespace KV
+
+Dans Cloudflare > Workers & Pages > KV, crée un namespace (ex: `factures-resonance-kv`).
+
+### 2) Lier le namespace à ton projet Pages
+
+Dans ton projet Pages > Paramètres > Fonctions > Liaison KV:
+
+- Nom de variable: `INVOICES_KV`
+- Namespace: `factures-resonance-kv`
+
+### 3) Ajouter un token de protection (recommandé)
+
+Dans Pages > Variables et secrets (Production):
+
+- `SYNC_TOKEN` (secret côté serveur)
+- `VITE_SYNC_TOKEN` (même valeur, variable build côté front)
+
+Tu peux aussi définir `VITE_SYNC_ENDPOINT` si tu veux pointer vers une autre API.
+
+### 4) Déployer
+
+Chaque sauvegarde d’une facture enverra automatiquement les données vers `/api/invoices`.
+
+## Notes
+
+- Sans binding KV, l’app continue de fonctionner en localStorage uniquement.
+- Les données cloud sont isolées par appareil (ID local du navigateur).
+
+---
+
+## Template Vite (historique)
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

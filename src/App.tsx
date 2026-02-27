@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { ThemeToggle } from './components/ThemeToggle';
-import { loadInvoices, loadTheme, saveTheme, upsertInvoice } from './lib/storage';
+import { loadInvoicesFromCloud, syncInvoicesToCloud } from './lib/cloudSync';
+import { loadInvoices, loadTheme, saveInvoices, saveTheme, upsertInvoice } from './lib/storage';
 import type { Invoice } from './types/invoice';
 
 const Dashboard = lazy(() => import('./pages/Dashboard').then((module) => ({ default: module.Dashboard })));
@@ -9,8 +10,9 @@ const Editor = lazy(() => import('./pages/Editor').then((module) => ({ default: 
 type View = 'dashboard' | 'editor';
 
 function App() {
+	const initialInvoices = loadInvoices();
   const [view, setView] = useState<View>('dashboard');
-  const [invoices, setInvoices] = useState<Invoice[]>(() => loadInvoices());
+  const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
   const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => loadTheme());
 
@@ -18,6 +20,26 @@ function App() {
     document.documentElement.classList.toggle('dark', theme === 'dark');
     saveTheme(theme);
   }, [theme]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const syncOnBoot = async () => {
+      const remoteInvoices = await loadInvoicesFromCloud();
+      if (!remoteInvoices || cancelled) return;
+
+      if (remoteInvoices.length > 0 || initialInvoices.length === 0) {
+        saveInvoices(remoteInvoices);
+        setInvoices(remoteInvoices);
+      }
+    };
+
+    void syncOnBoot();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialInvoices.length]);
 
   const preloadCreateFlow = () => {
     void import('./pages/Editor');
@@ -40,9 +62,15 @@ function App() {
   const handleSave = (invoice: Invoice) => {
     const updated = upsertInvoice(invoice);
     setInvoices(updated);
+    void syncInvoicesToCloud(updated);
     setCurrentInvoice(null);
     setView('dashboard');
   };
+
+	const handleInvoicesImported = (updatedInvoices: Invoice[]) => {
+		setInvoices(updatedInvoices);
+		void syncInvoicesToCloud(updatedInvoices);
+	};
 
   return (
     <main className="mx-auto max-w-7xl p-4 text-[#202020]">
@@ -70,7 +98,7 @@ function App() {
             onCreate={handleCreate}
             onPrepareCreate={preloadCreateFlow}
             onOpen={handleOpen}
-            onInvoicesImported={setInvoices}
+            onInvoicesImported={handleInvoicesImported}
           />
         ) : currentInvoice ? (
           <Editor
