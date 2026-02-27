@@ -36,6 +36,7 @@ Dans Pages > Variables et secrets (Production):
 
 - `SYNC_TOKEN` (secret côté serveur)
 - `VITE_SYNC_TOKEN` (même valeur, variable build côté front)
+- `VITE_SYNC_SCOPE` (optionnel, ex: `resonance-global`)
 
 Tu peux aussi définir `VITE_SYNC_ENDPOINT` si tu veux pointer vers une autre API.
 
@@ -46,7 +47,9 @@ Chaque sauvegarde d’une facture enverra automatiquement les données vers `/ap
 ## Notes
 
 - Sans binding KV, l’app continue de fonctionner en localStorage uniquement.
-- Les données cloud sont isolées par appareil (ID local du navigateur).
+- Les données cloud sont partagées entre appareils pour un même `VITE_SYNC_SCOPE`.
+- Si `VITE_SYNC_SCOPE` n'est pas défini, la valeur par défaut est `shared`.
+- Sans compte utilisateur, toute personne disposant de l'URL + token peut accéder au même espace de factures.
 
 ---
 

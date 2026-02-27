@@ -1,6 +1,6 @@
 const corsHeaders = {
 	'Access-Control-Allow-Origin': '*',
-	'Access-Control-Allow-Headers': 'content-type, authorization, x-device-id',
+	'Access-Control-Allow-Headers': 'content-type, authorization, x-sync-scope, x-device-id',
 	'Access-Control-Allow-Methods': 'GET,PUT,OPTIONS',
 };
 
@@ -22,7 +22,15 @@ const badRequest = (message) =>
 		},
 	});
 
-const getDeviceId = (request) => request.headers.get('x-device-id') || '';
+const getSyncScope = (request) => {
+	const scoped = request.headers.get('x-sync-scope') || '';
+	if (scoped) return scoped;
+
+	const legacyDeviceId = request.headers.get('x-device-id') || '';
+	if (legacyDeviceId) return `device:${legacyDeviceId}`;
+
+	return 'shared';
+};
 
 const checkToken = (request, env) => {
 	if (!env?.SYNC_TOKEN) return true;
@@ -39,11 +47,10 @@ export async function onRequestGet(context) {
 
 	if (!checkToken(request, env)) return unauthorized();
 
-	const deviceId = getDeviceId(request);
-	if (!deviceId) return badRequest('Missing x-device-id header');
+	const scope = getSyncScope(request);
 	if (!env?.INVOICES_KV) return badRequest('Missing INVOICES_KV binding');
 
-	const raw = await env.INVOICES_KV.get(`invoices:${deviceId}`);
+	const raw = await env.INVOICES_KV.get(`invoices:${scope}`);
 	const invoices = raw ? JSON.parse(raw) : [];
 
 	return new Response(JSON.stringify({ invoices }), {
@@ -59,8 +66,7 @@ export async function onRequestPut(context) {
 
 	if (!checkToken(request, env)) return unauthorized();
 
-	const deviceId = getDeviceId(request);
-	if (!deviceId) return badRequest('Missing x-device-id header');
+	const scope = getSyncScope(request);
 	if (!env?.INVOICES_KV) return badRequest('Missing INVOICES_KV binding');
 
 	const payload = await request.json().catch(() => null);
@@ -68,7 +74,7 @@ export async function onRequestPut(context) {
 		return badRequest('Payload must contain an invoices array');
 	}
 
-	await env.INVOICES_KV.put(`invoices:${deviceId}`, JSON.stringify(payload.invoices));
+	await env.INVOICES_KV.put(`invoices:${scope}`, JSON.stringify(payload.invoices));
 
 	return new Response(JSON.stringify({ ok: true }), {
 		headers: {

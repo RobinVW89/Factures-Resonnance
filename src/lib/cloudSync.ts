@@ -1,6 +1,6 @@
 import type { Invoice } from '../types/invoice';
 
-const DEVICE_ID_KEY = 'fr.device.id';
+const DEFAULT_SCOPE = 'shared';
 
 const resolveSyncEndpoint = (): string => {
 	const endpoint = import.meta.env.VITE_SYNC_ENDPOINT;
@@ -15,20 +15,17 @@ const resolveSyncToken = (): string | undefined => {
 	return value || undefined;
 };
 
-const ensureDeviceId = (): string => {
-	const existing = localStorage.getItem(DEVICE_ID_KEY);
-	if (existing) return existing;
-
-	const generated = crypto.randomUUID();
-	localStorage.setItem(DEVICE_ID_KEY, generated);
-	return generated;
+const resolveSyncScope = (): string => {
+	const scope = import.meta.env.VITE_SYNC_SCOPE;
+	if (typeof scope === 'string' && scope.trim()) return scope.trim();
+	return DEFAULT_SCOPE;
 };
 
 const buildHeaders = (): HeadersInit => {
 	const token = resolveSyncToken();
 	return {
 		'content-type': 'application/json',
-		'x-device-id': ensureDeviceId(),
+		'x-sync-scope': resolveSyncScope(),
 		...(token ? { authorization: `Bearer ${token}` } : {}),
 	};
 };
