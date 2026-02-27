@@ -6,6 +6,8 @@ import { getNextInvoiceNumber } from './numbering';
 
 export const defaultLegalMentions =
   "Association Loi 1901, enregistrée à la préfecture d'Auxerre.";
+export const staticIssuerEmail = 'soyer.robin@orange.fr';
+export const staticIssuerPhone = '0681669725';
 
 const defaultItems = [{ description: '', quantity: 1, unitPrice: 0, discountPct: 0 }];
 
@@ -22,8 +24,8 @@ export const createDefaultInvoice = (): Invoice => {
       tagline: 'Le Business Ensemble',
       address: '2 rue des chariats, 89290 IRANCY',
       legalMentions: defaultLegalMentions,
-      email: '',
-      phone: '',
+      email: staticIssuerEmail,
+      phone: staticIssuerPhone,
     },
     customer: {
       name: 'LG Courtage & J3G Patrimoine',

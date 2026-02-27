@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { computeTotals } from '../lib/calculations';
+import { staticIssuerEmail, staticIssuerPhone } from '../lib/defaults';
 import { ItemsTable } from '../components/ItemsTable';
 import { TotalsCard } from '../components/TotalsCard';
 import type { Invoice, PaymentMethod } from '../types/invoice';
@@ -18,6 +19,17 @@ type EditorProps = {
 export function Editor({ invoice, onChange, onSave, onBack }: EditorProps) {
 	const previewAnchorRef = useRef<HTMLDivElement | null>(null);
 	const [shouldLoadPreview, setShouldLoadPreview] = useState(false);
+
+	useEffect(() => {
+		if (invoice.issuer.email === staticIssuerEmail && invoice.issuer.phone === staticIssuerPhone) return;
+		updateInvoice({
+			issuer: {
+				...invoice.issuer,
+				email: staticIssuerEmail,
+				phone: staticIssuerPhone,
+			},
+		});
+	}, [invoice.issuer, invoice]);
 
 	useEffect(() => {
 		if (shouldLoadPreview) return;
@@ -83,7 +95,16 @@ export function Editor({ invoice, onChange, onSave, onBack }: EditorProps) {
 				</button>
 				<button
 					type="button"
-					onClick={() => onSave(invoice)}
+					onClick={() =>
+						onSave({
+							...invoice,
+							issuer: {
+								...invoice.issuer,
+								email: staticIssuerEmail,
+								phone: staticIssuerPhone,
+							},
+						})
+					}
 					className="rounded-md border border-[#B9CC92] bg-[#C8D8A8] px-3 py-2 text-sm font-medium text-[#202020] hover:bg-[#B9CC92]"
 				>
 					Enregistrer
@@ -152,15 +173,15 @@ export function Editor({ invoice, onChange, onSave, onBack }: EditorProps) {
 							/>
 							<input
 								placeholder="Email"
-								value={invoice.issuer.email || ''}
-								onChange={(event) => updateInvoice({ issuer: { ...invoice.issuer, email: event.target.value } })}
-								className="rounded-md border border-[#E0E0E0] bg-white px-2 py-1"
+								value={staticIssuerEmail}
+								readOnly
+								className="rounded-md border border-[#E0E0E0] bg-[#EEF2F6] px-2 py-1 text-[#404040]"
 							/>
 							<input
 								placeholder="Téléphone"
-								value={invoice.issuer.phone || ''}
-								onChange={(event) => updateInvoice({ issuer: { ...invoice.issuer, phone: event.target.value } })}
-								className="rounded-md border border-[#E0E0E0] bg-white px-2 py-1"
+								value={staticIssuerPhone}
+								readOnly
+								className="rounded-md border border-[#E0E0E0] bg-[#EEF2F6] px-2 py-1 text-[#404040]"
 							/>
 							<textarea
 								placeholder="Mentions légales"
