@@ -54,8 +54,8 @@ export async function generatePDF(invoice: Invoice, logoBase64?: string | null):
       const base64Data = logoBase64.split(',')[1] || logoBase64;
       const imgBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
       let img;
-      if (logoBase64.includes('data:image/png') || logoBase64.startsWith('iVBOR')) {
-        img = await doc.embedPng(imgBytes);
+      if (logoBase64.includes('data:image/jpeg') || logoBase64.includes('data:image/jpg')) {
+        img = await doc.embedJpg(imgBytes);
       } else {
         img = await doc.embedPng(imgBytes);
       }

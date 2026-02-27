@@ -406,10 +406,10 @@ export default function Editor() {
               <div className="flex items-center gap-4">
                 {logo && <img src={logo} alt="Logo" className="max-h-12 max-w-24 object-contain border rounded" />}
                 <div>
-                  <label className={labelClass}>Importer un logo PNG</label>
+                  <label className={labelClass}>Importer un logo (PNG, JPEG)</label>
                   <input
                     type="file"
-                    accept="image/png,image/jpeg,image/gif"
+                    accept="image/png,image/jpeg"
                     onChange={handleLogoUpload}
                     className="text-sm text-gray-600 dark:text-gray-400"
                   />
