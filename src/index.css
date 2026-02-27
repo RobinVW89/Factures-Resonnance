@@ -25,6 +25,17 @@ body {
   color: var(--ref-text);
 }
 
+html.dark {
+  --ref-bg: #0f1115;
+  --ref-text: #f1f5f9;
+  --ref-border: #2a3140;
+}
+
+html.dark body {
+  background: var(--ref-bg);
+  color: var(--ref-text);
+}
+
 #root {
   min-height: 100vh;
 }
@@ -38,4 +49,45 @@ textarea {
 
 button {
   cursor: pointer;
+}
+
+.theme-dark {
+  color: #f1f5f9 !important;
+}
+
+.theme-dark section,
+.theme-dark header,
+.theme-dark .rounded-lg,
+.theme-dark .rounded-md,
+.theme-dark table,
+.theme-dark tr,
+.theme-dark td,
+.theme-dark th {
+  background-color: #151b23 !important;
+  color: #f1f5f9 !important;
+  border-color: #2a3140 !important;
+}
+
+.theme-dark input,
+.theme-dark textarea,
+.theme-dark select,
+.theme-dark button {
+  background-color: #0f141b !important;
+  color: #f1f5f9 !important;
+  border-color: #2a3140 !important;
+}
+
+.theme-dark p,
+.theme-dark dt,
+.theme-dark dd,
+.theme-dark label,
+.theme-dark h1,
+.theme-dark h2,
+.theme-dark h3,
+.theme-dark span {
+  color: #dbe5f0 !important;
+}
+
+.theme-dark .animate-pulse {
+  background-color: #1f2733 !important;
 }
