@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import type { Invoice } from '../types/invoice';
 import { loadInvoices, saveInvoices, exportInvoicesJSON, importInvoicesJSON } from '../lib/storage';
 import { getNextInvoiceNumber } from '../lib/invoiceNumber';
-import { formatCurrency } from '../lib/formatters';
+import { formatCurrency, todayISO } from '../lib/formatters';
 import InvoiceList from '../components/InvoiceList';
 import ThemeToggle from '../components/ThemeToggle';
 
@@ -34,7 +34,7 @@ export default function Dashboard() {
       ...src,
       id: crypto.randomUUID(),
       number: getNextInvoiceNumber(),
-      date: new Date().toISOString().substring(0, 10),
+      date: todayISO(),
       payment: { status: 'à payer' },
     };
     persist([copy, ...invoices]);

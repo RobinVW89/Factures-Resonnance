@@ -6,8 +6,9 @@ export function getNextInvoiceNumber(): string {
   const currentYear = now.getFullYear();
   const storedYear = parseInt(localStorage.getItem(YEAR_KEY) ?? '0', 10);
   let counter = parseInt(localStorage.getItem(COUNTER_KEY) ?? '0', 10);
-  
-  if (storedYear !== currentYear) {
+  if (isNaN(counter)) counter = 0;
+
+  if (isNaN(storedYear) || storedYear !== currentYear) {
     counter = 0;
     localStorage.setItem(YEAR_KEY, String(currentYear));
   }
@@ -22,7 +23,8 @@ export function peekNextInvoiceNumber(): string {
   const currentYear = now.getFullYear();
   const storedYear = parseInt(localStorage.getItem(YEAR_KEY) ?? '0', 10);
   let counter = parseInt(localStorage.getItem(COUNTER_KEY) ?? '0', 10);
-  if (storedYear !== currentYear) counter = 0;
+  if (isNaN(counter)) counter = 0;
+  if (isNaN(storedYear) || storedYear !== currentYear) counter = 0;
   return `${currentYear}-${String(counter + 1).padStart(4, '0')}`;
 }
 

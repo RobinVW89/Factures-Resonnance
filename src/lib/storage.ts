@@ -1,6 +1,6 @@
 import type { Invoice } from '../types/invoice';
 
-const STORAGE_KEY = 'factures_resonnance_invoices';
+const STORAGE_KEY = 'factures_resonance_invoices';
 
 export function loadInvoices(): Invoice[] {
   try {
