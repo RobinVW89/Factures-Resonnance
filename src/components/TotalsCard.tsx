@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Invoice } from '../types/invoice';
 import { formatCurrency } from '../lib/formatters';
 
@@ -5,7 +6,7 @@ type TotalsCardProps = {
   totals: Invoice['totals'];
 };
 
-export function TotalsCard({ totals }: TotalsCardProps) {
+function TotalsCardComponent({ totals }: TotalsCardProps) {
   return (
     <div className="rounded-lg border border-[#E0E0E0] bg-white p-4 shadow-sm">
       <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[#404040]">Totaux</h3>
@@ -27,3 +28,5 @@ export function TotalsCard({ totals }: TotalsCardProps) {
     </div>
   );
 }
+
+export const TotalsCard = memo(TotalsCardComponent);

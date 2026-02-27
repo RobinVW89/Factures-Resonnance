@@ -5,7 +5,7 @@ import { TotalsCard } from '../components/TotalsCard';
 import type { Invoice, PaymentMethod } from '../types/invoice';
 
 const InvoicePreview = lazy(() =>
-	import('../components/InvoicePreview').then((module) => ({ default: module.InvoicePreview })),
+	import('../components/InvoicePreview').then((module) => ({ default: module.MemoInvoicePreview })),
 );
 
 type EditorProps = {

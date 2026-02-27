@@ -1,6 +1,11 @@
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import type { Invoice } from '../types/invoice';
-import { buildPdfBlobUrl } from '../lib/pdf';
+
+type PdfWorkerResponse = {
+  id: number;
+  bytes?: Uint8Array;
+  error?: string;
+};
 
 type InvoicePreviewProps = {
   invoice: Invoice;
@@ -9,15 +14,54 @@ type InvoicePreviewProps = {
 export function InvoicePreview({ invoice }: InvoicePreviewProps) {
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const workerRef = useRef<Worker | null>(null);
+  const requestIdRef = useRef(0);
+
+  const ensureWorker = () => {
+    if (workerRef.current || typeof Worker === 'undefined') return workerRef.current;
+    workerRef.current = new Worker(new URL('../workers/pdfWorker.ts', import.meta.url), { type: 'module' });
+    return workerRef.current;
+  };
 
   useEffect(() => {
     let cancelled = false;
     let currentUrl = '';
+    const requestId = ++requestIdRef.current;
+    const worker = ensureWorker();
 
     const render = async () => {
       try {
         setError('');
-        const url = await buildPdfBlobUrl(invoice);
+
+        const hasSvgLogo = invoice.logoDataUrl?.startsWith('data:image/svg+xml') ?? false;
+        const useWorker = Boolean(worker) && !hasSvgLogo;
+
+        const url = await (useWorker
+          ? new Promise<string>((resolve, reject) => {
+              const onMessage = (event: MessageEvent<PdfWorkerResponse>) => {
+                const data = event.data;
+                if (data.id !== requestId) return;
+
+                worker?.removeEventListener('message', onMessage);
+                if (data.error || !data.bytes) {
+                  reject(new Error(data.error || "Impossible de générer l'aperçu PDF."));
+                  return;
+                }
+
+                const bytes = new Uint8Array(data.bytes.byteLength);
+                bytes.set(data.bytes);
+                const blob = new Blob([bytes], { type: 'application/pdf' });
+                resolve(URL.createObjectURL(blob));
+              };
+
+              worker?.addEventListener('message', onMessage);
+              worker?.postMessage({ id: requestId, invoice });
+            })
+          : (async () => {
+              const { buildPdfBlobUrl } = await import('../lib/pdf');
+              return buildPdfBlobUrl(invoice);
+            })());
+
         if (!cancelled) {
           currentUrl = url;
           setPreviewUrl(url);
@@ -29,13 +73,21 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
       }
     };
 
-    render();
+    const timeoutId = window.setTimeout(render, 200);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timeoutId);
       if (currentUrl) URL.revokeObjectURL(currentUrl);
     };
   }, [invoice]);
+
+  useEffect(() => {
+    return () => {
+      workerRef.current?.terminate();
+      workerRef.current = null;
+    };
+  }, []);
 
   return (
     <section className="rounded-lg border border-[#E0E0E0] bg-white p-3 shadow-sm">
@@ -52,3 +104,5 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
     </section>
   );
 }
+
+export const MemoInvoicePreview = memo(InvoicePreview);

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Invoice } from '../types/invoice';
 import { formatCurrency, formatDate } from '../lib/formatters';
 
@@ -10,7 +11,7 @@ type DashboardTableProps = {
   onOpen: (invoiceId: string) => void;
 };
 
-export function DashboardTable({
+function DashboardTableComponent({
   invoices,
   search,
   sortBy,
@@ -85,3 +86,5 @@ export function DashboardTable({
     </section>
   );
 }
+
+export const DashboardTable = memo(DashboardTableComponent);
