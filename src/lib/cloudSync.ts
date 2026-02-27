@@ -30,23 +30,46 @@ const buildHeaders = (): HeadersInit => {
 	};
 };
 
-export const loadInvoicesFromCloud = async (): Promise<Invoice[] | null> => {
+export type CloudSyncResult<T> =
+	| {
+			ok: true;
+			data: T;
+	  }
+	| {
+			ok: false;
+			error: string;
+			status?: number;
+	  };
+
+const readErrorMessage = async (response: Response): Promise<string> => {
+	try {
+		const payload = (await response.json()) as { error?: string };
+		if (payload?.error) return payload.error;
+	} catch {
+	}
+	return response.statusText || 'Erreur inconnue';
+};
+
+export const loadInvoicesFromCloud = async (): Promise<CloudSyncResult<Invoice[]>> => {
 	try {
 		const response = await fetch(resolveSyncEndpoint(), {
 			method: 'GET',
 			headers: buildHeaders(),
 		});
 
-		if (!response.ok) return null;
+		if (!response.ok) {
+			const error = await readErrorMessage(response);
+			return { ok: false, error, status: response.status };
+		}
 
 		const payload = (await response.json()) as { invoices?: Invoice[] };
-		return Array.isArray(payload.invoices) ? payload.invoices : [];
+		return { ok: true, data: Array.isArray(payload.invoices) ? payload.invoices : [] };
 	} catch {
-		return null;
+		return { ok: false, error: 'Erreur réseau' };
 	}
 };
 
-export const syncInvoicesToCloud = async (invoices: Invoice[]): Promise<boolean> => {
+export const syncInvoicesToCloud = async (invoices: Invoice[]): Promise<CloudSyncResult<true>> => {
 	try {
 		const response = await fetch(resolveSyncEndpoint(), {
 			method: 'PUT',
@@ -54,8 +77,13 @@ export const syncInvoicesToCloud = async (invoices: Invoice[]): Promise<boolean>
 			body: JSON.stringify({ invoices }),
 		});
 
-		return response.ok;
+		if (!response.ok) {
+			const error = await readErrorMessage(response);
+			return { ok: false, error, status: response.status };
+		}
+
+		return { ok: true, data: true };
 	} catch {
-		return false;
+		return { ok: false, error: 'Erreur réseau' };
 	}
 };

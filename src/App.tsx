@@ -17,6 +17,7 @@ function App() {
   const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => loadTheme());
   const [syncState, setSyncState] = useState<SyncState>('idle');
+  const [syncErrorDetail, setSyncErrorDetail] = useState('');
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -28,12 +29,18 @@ function App() {
 
     const syncOnBoot = async () => {
       setSyncState('syncing');
-      const remoteInvoices = await loadInvoicesFromCloud();
+      setSyncErrorDetail('');
+      const remoteResult = await loadInvoicesFromCloud();
       if (cancelled) return;
-      if (!remoteInvoices) {
+      if (!remoteResult.ok) {
         setSyncState('error');
+        setSyncErrorDetail(
+          remoteResult.status ? `${remoteResult.status} - ${remoteResult.error}` : remoteResult.error,
+        );
         return;
       }
+
+      const remoteInvoices = remoteResult.data;
 
       if (remoteInvoices.length > 0 || initialInvoices.length === 0) {
         saveInvoices(remoteInvoices);
@@ -41,6 +48,7 @@ function App() {
       }
 
       setSyncState('ok');
+      setSyncErrorDetail('');
     };
 
     void syncOnBoot();
@@ -72,7 +80,17 @@ function App() {
     const updated = upsertInvoice(invoice);
     setInvoices(updated);
     setSyncState('syncing');
-    void syncInvoicesToCloud(updated).then((ok) => setSyncState(ok ? 'ok' : 'error'));
+    setSyncErrorDetail('');
+    void syncInvoicesToCloud(updated).then((result) => {
+      if (result.ok) {
+        setSyncState('ok');
+        setSyncErrorDetail('');
+        return;
+      }
+
+      setSyncState('error');
+      setSyncErrorDetail(result.status ? `${result.status} - ${result.error}` : result.error);
+    });
     setCurrentInvoice(null);
     setView('dashboard');
   };
@@ -80,7 +98,17 @@ function App() {
 	const handleInvoicesImported = (updatedInvoices: Invoice[]) => {
 		setInvoices(updatedInvoices);
 		setSyncState('syncing');
-		void syncInvoicesToCloud(updatedInvoices).then((ok) => setSyncState(ok ? 'ok' : 'error'));
+		setSyncErrorDetail('');
+		void syncInvoicesToCloud(updatedInvoices).then((result) => {
+			if (result.ok) {
+				setSyncState('ok');
+				setSyncErrorDetail('');
+				return;
+			}
+
+			setSyncState('error');
+			setSyncErrorDetail(result.status ? `${result.status} - ${result.error}` : result.error);
+		});
 	};
 
   const syncLabel =
@@ -89,7 +117,7 @@ function App() {
       : syncState === 'syncing'
         ? 'Sync cloud…'
         : syncState === 'error'
-          ? 'Sync cloud KO'
+          ? `Sync cloud KO${syncErrorDetail ? ` (${syncErrorDetail})` : ''}`
           : 'Sync cloud local';
 
   return (
@@ -108,7 +136,7 @@ function App() {
                   ? 'border-[#E8B4B4] bg-[#FFF4F4] text-[#7A1C1C]'
                   : 'border-[#E0E0E0] bg-white text-[#505050]'
             }`}
-            title="État de la sauvegarde cloud"
+            title={syncErrorDetail ? `État sync cloud : ${syncErrorDetail}` : 'État de la sauvegarde cloud'}
           >
             {syncLabel}
           </span>
